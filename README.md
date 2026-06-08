@@ -64,5 +64,5 @@ Edit the params at the top of `data/download.py`, especially `USER_AGENT`, then 
 uv run data/download.py
 ```
 
-By default this downloads the latest 5 10-K filings for AAPL, MSFT, NVDA, AMZN, and GOOGL into year folders under `data/downloads/` and writes a `manifest.json`.
+By default this downloads the latest 5 10-K filings for NFLX, TSLA, COST, JPM, and UNH into year folders under `data/downloads/` and writes a `manifest.json`.
 Downloaded files are gitignored; the `data/` folder itself stays in git for the script and notes.

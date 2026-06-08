@@ -13,17 +13,17 @@ from urllib import request
 
 # Params: edit these, then run `uv run data/download.py`
 USER_AGENT = "Document Copilot your.email@example.com"
-TICKERS = ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL"]
+TICKERS = ["NFLX", "TSLA", "COST", "JPM", "UNH"]
 FILINGS_PER_COMPANY = 5
 OUTPUT_DIR = Path(__file__).resolve().parent / "downloads"
 CLEAR_OUTPUT_DIR = True
 
 COMPANY_CIKS = {
-    "AAPL": "0000320193",
-    "MSFT": "0000789019",
-    "NVDA": "0001045810",
-    "AMZN": "0001018724",
-    "GOOGL": "0001652044",
+    "NFLX": "0001065280",
+    "TSLA": "0001318605",
+    "COST": "0000909832",
+    "JPM":  "0000019617",
+    "UNH":  "0000072971",
 }
 
 

@@ -44,18 +44,18 @@ An internal chatbot — call it **Document Copilot** — where any Driftwood ana
 
 ## Example analyst questions
 
-The current sample corpus contains 10-K filings for Apple, Amazon, Alphabet, Microsoft, and NVIDIA across fiscal years 2021–2025. The bot should be able to handle questions like these with cited answers and underlying passages:
+The current sample corpus contains 10-K filings for Netflix, Tesla, Costco, JPMorgan, and United Healthcare across fiscal years 2021–2025. The bot should be able to handle questions like these with cited answers and underlying passages:
 
-1. Across Apple's 2021–2025 10-Ks, how did the revenue mix between iPhone, Services, Mac, iPad, and Wearables change, and which category appears to have contributed most to any mix shift?
-2. For Amazon, compare AWS operating income and margin against North America and International from 2021–2025. In which years did AWS appear to fund losses or weaker profitability elsewhere?
-3. How did NVIDIA describe demand drivers, customer concentration, and supply constraints for its Data Center business from fiscal 2021 through fiscal 2025?
-4. Across Microsoft's 2021–2025 filings, what changed in the way the company describes Azure, AI infrastructure, and cloud capacity constraints?
-5. For Alphabet, how did Google Search, YouTube ads, Google Network, subscriptions/platforms/devices, and Google Cloud revenue trends differ across the available 10-Ks?
-6. Which of the five companies added, removed, or materially changed risk-factor language related to AI, cloud infrastructure, export controls, supply chain concentration, or regulation between 2021 and 2025?
-7. For Apple and NVIDIA, what do the filings say about supplier concentration or dependence on third-party manufacturing, and did the wording become more or less urgent over time?
-8. Compare capital expenditures and purchase commitments for Microsoft, Alphabet, Amazon, and NVIDIA. What do the filings imply about the scale and timing of AI/cloud infrastructure investment?
+1. Across Netflix's 2021–2025 10-Ks, how did the revenue mix between ad-supported, standard, and premium subscription plans change, and which segment appears to have contributed most to growth?
+2. For Tesla, compare automotive revenue growth against energy storage and services revenue from 2021–2025. What do the filings say about geographic concentration and production capacity?
+3. How did JPMorgan describe the contribution of Investment Banking, Wealth Management, and Commercial Banking to net revenue from fiscal 2021 through fiscal 2025, and how did net interest margins trend?
+4. Across Costco's 2021–2025 filings, what changed in the way the company describes membership growth, warehouse expansion plans, and fee revenue trends?
+5. For United Healthcare, how did medical revenue, pharmacy revenue, and Optum segment revenue trends differ across the available 10-Ks, and what were the key drivers?
+6. Which of the five companies added, removed, or materially changed risk-factor language related to regulatory changes, cybersecurity, inflation, labor costs, or supply chain constraints between 2021 and 2025?
+7. For Netflix and Tesla, what do the filings say about competitive pressure, content costs (Netflix) and supply constraints (Tesla), and did the wording become more or less urgent over time?
+8. Compare capital expenditures and share repurchase commitments for Netflix, Tesla, Costco, and JPMorgan. What do the filings imply about capital allocation priorities and management confidence?
 9. For each company, summarize the most important geographic revenue exposures disclosed in the latest 10-K, then identify any year-over-year changes that could matter to an analyst.
-10. If an analyst asks whether the filings prove that generative AI improved margins for any of these companies, what evidence exists in the corpus, and where should the bot refuse to infer beyond the filings?
+10. If an analyst asks whether the filings prove that cost inflation impacted profitability for any of these companies, what evidence exists in the corpus, and where should the bot refuse to infer beyond the filings?
 
 ## What "trust" means here
 
