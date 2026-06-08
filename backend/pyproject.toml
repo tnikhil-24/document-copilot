@@ -25,6 +25,11 @@ dependencies = [
 [tool.hatch.build.targets.wheel]
 packages = ["app"]
 
+[tool.pytest.ini_options]
+markers = [
+    "integration: requires live external services (Supabase, OpenAI) — excluded from the fast suite",
+]
+
 [tool.uv]
 add-bounds = "exact"
 exclude-newer = "2026-06-08T00:00:00Z"

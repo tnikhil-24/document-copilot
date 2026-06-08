@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from fastapi import Depends, Header, HTTPException
 from supabase import AsyncClient, AuthApiError
 
+from app.database.profiles import get_or_create_profile
 from app.database.supabase import create_user_client
 
 
@@ -14,6 +15,7 @@ class CurrentUser:
     id: uuid.UUID
     email: str
     access_token: str
+    full_name: str | None
 
 
 def _extract_bearer_token(authorization: str | None = Header(default=None)) -> str:
@@ -52,4 +54,11 @@ async def get_current_user(
     if user.email is None:
         raise HTTPException(status_code=401, detail="Authenticated user has no email")
 
-    return CurrentUser(id=uuid.UUID(user.id), email=user.email, access_token=token)
+    profile = await get_or_create_profile(client, user_id=user.id, email=user.email)
+
+    return CurrentUser(
+        id=uuid.UUID(user.id),
+        email=user.email,
+        access_token=token,
+        full_name=profile["full_name"],
+    )
