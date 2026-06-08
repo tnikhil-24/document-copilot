@@ -2,7 +2,7 @@ import uuid
 from datetime import date, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Text, func
+from sqlalchemy import Text, func, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.models.base import TIMESTAMP, Base
@@ -16,7 +16,9 @@ class SourceDocument(Base):
 
     __tablename__ = "source_documents"
 
-    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(
+        primary_key=True, default=uuid.uuid4, server_default=text("gen_random_uuid()")
+    )
     ticker: Mapped[str] = mapped_column(index=True)
     company_name: Mapped[str]
     cik: Mapped[str] = mapped_column(index=True)

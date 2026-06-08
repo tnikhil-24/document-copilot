@@ -60,11 +60,11 @@ Each slice below states its goal, its definition of done as a demoable scenario,
 - [x] **Routing** — React Router with `/` (home), `/chat/:threadId`, `/login`
 - [x] **Supabase Auth UI** — sign in with Driftwood email, session storage, logout
 - [x] **Route guards** — redirect unauthenticated users to `/login`
-- [ ] **Install Vercel AI SDK** — `@vercel/ai` for chat components and the streaming client
-- [ ] **useChat hook** — initialize with thread ID and message history, transport = `/chat/stream`
-- [ ] **Message display** — render user and assistant messages, show loading state
-- [ ] **Send message** — capture input, post to backend, stream the response into the UI
-- [ ] **Error boundary** — catch and display a friendly message on request failure
+- [x] **Install Vercel AI SDK** — `@vercel/ai` for chat components and the streaming client
+- [x] **useChat hook** — initialize with thread ID and message history, transport = `/chat/stream`
+- [x] **Message display** — render user and assistant messages, show loading state
+- [x] **Send message** — capture input, post to backend, stream the response into the UI
+- [x] **Error boundary** — catch and display a friendly message on request failure
 
 ### Deploy
 - [ ] **Railway services** — stand up the frontend (static Vite build) and backend (FastAPI/Uvicorn) services
