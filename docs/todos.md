@@ -45,12 +45,12 @@ Each slice below states its goal, its definition of done as a demoable scenario,
 - [x] **JWT verification** — call Supabase Auth or validate signing keys locally
 - [x] **User creation** — link Supabase `auth.users.id` to `profiles` on first login
 - [x] **Route protection** — `@require_auth` dependency on restricted endpoints
-- [ ] **Chat persistence layer** — `app/database/chats.py` create/read a thread and its messages
-- [ ] **POST /chat/stream** — accept thread ID + messages, verify user owns thread, stream a response
-- [ ] **Request/response types** — Pydantic models for message format and streaming events
-- [ ] **Stub assistant response** — hardcoded "answer not yet implemented" to test streaming plumbing
-- [ ] **Orchestrator skeleton** — `app/chat/orchestrator.py` and `app/chat/messages.py` coordinate one turn against the stub
-- [ ] **Error handling** — 401 for invalid/missing token, 404 for missing thread
+- [x] **Chat persistence layer** — `app/database/chats.py` create/read a thread and its messages
+- [x] **POST /chat/stream** — accept thread ID + messages, verify user owns thread, stream a response
+- [x] **Request/response types** — Pydantic models for message format and streaming events
+- [x] **Stub assistant response** — hardcoded "answer not yet implemented" to test streaming plumbing
+- [x] **Orchestrator skeleton** — `app/chat/orchestrator.py` and `app/chat/messages.py` coordinate one turn against the stub
+- [x] **Error handling** — 401 for invalid/missing token, 404 for missing thread
 
 ### Frontend
 - [x] **Vite project** — `frontend/` with React + TypeScript
