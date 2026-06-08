@@ -1,0 +1,12 @@
+# Railway service config — set this service's Root Directory to `frontend`.
+# Builds the static Vite bundle, then serves dist/ with `serve` in SPA mode
+# so React Router routes resolve to index.html on refresh/direct navigation.
+
+[build]
+builder = "NIXPACKS"
+buildCommand = "pnpm install --frozen-lockfile && pnpm build"
+
+[deploy]
+startCommand = "pnpm start"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3

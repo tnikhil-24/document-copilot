@@ -29,7 +29,9 @@ export function Chat({ threadId, initialMessages }: ChatProps) {
         headers: async () => {
           const { data } = await supabase.auth.getSession()
           const token = data.session?.access_token
-          return token ? { Authorization: `Bearer ${token}` } : {}
+          const headers: Record<string, string> = {}
+          if (token) headers.Authorization = `Bearer ${token}`
+          return headers
         },
         prepareSendMessagesRequest: ({ id, messages, headers, credentials, api }) => ({
           api,
