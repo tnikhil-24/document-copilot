@@ -119,7 +119,7 @@ Each slice below states its goal, its definition of done as a demoable scenario,
 - [x] **Error handling** — 404 on ChatPage shows error state; sidebar load failure is silent (doesn't block chat)
 
 ### Deploy
-- [ ] **Redeploy** — smoke test new user flow (blank composer → send → URL changes → sidebar updates), thread switching, and confirm old `/thread` endpoint is gone
+- [x] **Redeploy** — smoke test new user flow (blank composer → send → URL changes → sidebar updates), thread switching, and confirm old `/thread` endpoint is gone
 
 ---
 
@@ -129,40 +129,48 @@ Each slice below states its goal, its definition of done as a demoable scenario,
 
 **Definition of done:** Ask one of the brief's simpler single-fact questions (e.g., "What did Netflix's 2023 10-K say about content costs?") and get a real, validated, cited answer; click a citation and see the actual source passage with company/ticker/filing date/page. Ask something outside the corpus and get an honest refusal, never a guess. If the LLM or grounding step fails, the user sees a 502 and no half-message is persisted.
 
-### Retrieval (naive — semantic only)
+### Schema & config
+- [ ] **Migration: `match_document_chunks` RPC** — Postgres function for cosine-distance kNN over `document_chunks.embedding` with optional `ticker`/`year` filters on `chunk_metadata`
+- [ ] **Migration: `message_citations.marker`** — add a `marker: int` column to preserve `[1]`/`[2]` ordering across reloads
+- [ ] **Config** — add `openai_chat_model = "gpt-4o-mini"` to `app/config.py`
+
+### Retrieval (naive — semantic, with metadata filters)
 - [ ] **Embed user query** — call the OpenAI embedding API on the user's question
-- [ ] **pgvector retrieval** — semantic search on `document_chunks.embedding` (nearest k neighbors)
-- [ ] **Fetch context** — retrieve chunk text and metadata for grounding
+- [ ] **`app/retrieval/retriever.py`** — calls `match_document_chunks` via the Supabase client; returns full chunk content + metadata; `top_k=8`; optional `ticker`/`year` filters
 
 ### Agent (PydanticAI)
-- [ ] **Agent module** — `app/assistant/agent.py` defines the agent with typed inputs/outputs
-- [ ] **Dependencies** — `app/assistant/deps.py` bundles retriever, user_id, thread_id
-- [ ] **Output types** — `GroundedAnswer`, `Citation`, `SourcePassage` Pydantic models
-- [ ] **System instructions** — `app/assistant/instructions.md` encodes the grounding contract (cite everything, never invent, show confidence limits)
-- [ ] **search_filings tool** — takes the user's question, returns ranked chunks via the retriever
-- [ ] **read_chunk tool** — reads full chunk text by ID
-- [ ] **Tool constraints** — the agent can only cite chunks that were actually retrieved for this query
+- [ ] **Agent module** — `app/assistant/agent.py`: `gpt-4o-mini`, `request_limit=5` per turn
+- [ ] **Dependencies** — `app/assistant/deps.py` bundles the Supabase client, retriever, `user_id`, `thread_id`, and a registry of chunk IDs retrieved this run
+- [ ] **Output types** — `app/assistant/outputs.py`: `Citation { marker, chunk_id }` (model-produced, minimal), `GroundedAnswer { answer, citations, has_sufficient_evidence }`, `SourcePassage` (backend-hydrated only, never model output)
+- [ ] **System instructions** — `app/assistant/instructions.md` encodes the grounding contract: cite every claim from retrieved chunks only; set `has_sufficient_evidence=False` with empty `citations` when the corpus doesn't support an answer; no investment advice
+- [ ] **search_filings tool** — `(query, ticker=None, year=None, top_k=8)`; returns full chunk content + metadata; records returned chunk IDs in the deps registry
+- [ ] **read_chunk tool** — re-fetches full content by chunk ID; only succeeds for chunk IDs already in the deps registry
+- [ ] **Tool constraints** — the agent can only cite chunks recorded in the deps registry for this run
 
 ### Grounding & citation validation
-- [ ] **Grounding module** — `app/grounding/validator.py` checks all citations map to retrieved passages
-- [ ] **Citation extraction** — parse the assistant's output, extract claimed citations
-- [ ] **Validation logic** — every citation is in the retrieved set, has a source document, has page/section metadata
-- [ ] **Fail on invalid** — return 502 if grounding validation fails; persist nothing
-- [ ] **Citation persistence** — store `message_citations` records
-- [ ] **Unit tests** — citation extraction, metadata preservation, validation pass/fail
-- [ ] **Integration tests** — full turn: retrieval → agent → citation → validation
+- [ ] **Grounding module** — `app/grounding/validator.py`: pure `validate_citations(answer, retrieved_chunk_ids)` checks marker↔citation 1:1 consistency, every `chunk_id` is in the retrieved set, and `has_sufficient_evidence` is consistent with `citations` (non-empty+valid iff `True`)
+- [ ] **Self-correction** — wire `validate_citations` as `@agent.output_validator`; on failure raise `ModelRetry` describing the valid markers/chunk IDs, consuming part of the `request_limit` budget
+- [ ] **Hard gate** — orchestrator re-runs `validate_citations` after the agent finishes; on failure raise `HTTPException(502)` and persist nothing
+- [ ] **Source passage hydration** — build `SourcePassage` objects from the retrieved `document_chunks` rows (content + ticker/company/filing type/date/section), never from model output
+- [ ] **Citation persistence** — store `message_citations` records with `marker`, `chunk_id`, and `excerpt` (full chunk content)
+- [ ] **Unit tests** — validator pass/fail/refusal/marker-mismatch cases; agent tests via PydanticAI `TestModel`/`FunctionModel` for adversarial outputs (unretrieved chunk_id, mismatched markers, inconsistent `has_sufficient_evidence`)
+- [ ] **Integration tests** — full turn: retrieval → agent → validation → persistence, against brief questions #3, #4, #5, #10 plus an out-of-corpus refusal
 
-### Full turn orchestration
-- [ ] **Orchestrate one turn** — receive message → retrieve → invoke agent → validate citations → stream response → persist
-- [ ] **Streaming events** — emit text deltas, then citations/source passages once generation completes
-- [ ] **Error recovery** — on LLM/grounding failure, emit an error event and persist nothing
+### Full turn orchestration (validate-then-replay)
+- [ ] **Orchestrate one turn** — persist user message → run retrieval+agent+validation fully *before* opening the SSE stream → on success, stream `answer` text as deltas → emit `CitationsEvent` → persist assistant message + citations
+- [ ] **502 on failure** — any pipeline failure (retrieval, agent, exhausted retries, validation) raises `HTTPException(502)` before the stream opens; nothing beyond the user message is persisted
+- [ ] **Stateless per turn** — agent operates on the current question only; no thread history passed as `message_history` (deferred to a future slice)
 
 ### Frontend (basic citation UI)
-- [ ] **Citation display** — inline clickable citation markers in the answer text
-- [ ] **Source passage viewer** — show the passage, company/ticker/filing date/page on click
+- [ ] **Streaming contract** — new `CitationsEvent` encoded as `{"type": "data-citations", "data": {"passages": [...]}}`, emitted after `text-end`
+- [ ] **Citation display** — `ChatMessage` renders `[1]`/`[2]` markers in the answer text as clickable spans
+- [ ] **Source passage viewer** — shadcn `Dialog` modal showing passage content, ticker, company, filing type/date, section
+- [ ] **Reload hydration** — `to_ui_message` / `GET /threads/{thread_id}` joins `message_citations` + `document_chunks` to rebuild the same `data-citations` part on history load
 
 ### Acceptance
 - [ ] **Validate against the brief** — run questions #3, #4, #5, #10 (single-document, single-fact) and confirm cited, grounded answers
+- [ ] **Validate refusal** — ask an out-of-corpus question and confirm an honest refusal with no citations
+- [ ] **Validate failure path** — confirm a simulated pipeline failure returns 502 with nothing persisted
 - [ ] **Redeploy**
 
 ---
