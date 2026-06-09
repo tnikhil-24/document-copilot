@@ -70,6 +70,7 @@ def download_filings() -> dict:
         print(f"Downloading {ticker} filings...")
         cik = COMPANY_CIKS[ticker]
         submission = get_json(f"https://data.sec.gov/submissions/CIK{cik}.json")
+        company_name = submission.get("name", ticker)
         submissions = [submission]
         submissions.extend(
             get_json(f"https://data.sec.gov/submissions/{item['name']}")
@@ -100,6 +101,7 @@ def download_filings() -> dict:
             manifest["filings"].append(
                 {
                     "ticker": ticker,
+                    "company_name": company_name,
                     "cik": cik,
                     "form": filing["form"],
                     "filing_date": filing["filing_date"],

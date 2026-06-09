@@ -67,10 +67,10 @@ Each slice below states its goal, its definition of done as a demoable scenario,
 - [x] **Error boundary** — catch and display a friendly message on request failure
 
 ### Deploy
-- [ ] **Railway services** — stand up the frontend (static Vite build) and backend (FastAPI/Uvicorn) services
-- [ ] **Environment vars** — inject all secrets via the Railway secrets UI
-- [ ] **Postgres connection** — use the session connection (not the pooler) for migrations
-- [ ] **Confirm live** — log in and send a message against the deployed app
+- [x] **Railway services** — stand up the frontend (static Vite build) and backend (FastAPI/Uvicorn) services
+- [x] **Environment vars** — inject all secrets via the Railway secrets UI
+- [x] **Postgres connection** — use the session connection (not the pooler) for migrations
+- [x] **Confirm live** — log in and send a message against the deployed app
 
 ---
 
@@ -80,31 +80,46 @@ Each slice below states its goal, its definition of done as a demoable scenario,
 
 **Definition of done:** All 5 companies × ~5 filings (2021–2025) are downloaded, parsed, chunked, embedded, and loaded — verified by spot-checking chunk counts and a sample of embeddings against source text.
 
-- [ ] **Download SEC filings** — use `data/download.py` to fetch 10-Ks from EDGAR (Netflix, Tesla, Costco, JPMorgan, United Healthcare, 2021–2025)
-- [ ] **Parse to Markdown** — convert HTML/XML filings to normalized Markdown, extract metadata (ticker, CIK, filing date, accession number)
-- [ ] **Document persistence layer** — `app/database/documents.py` for storing source docs, chunks, embeddings
-- [ ] **Store source documents** — persist normalized Markdown in `source_documents`
-- [ ] **Chunking logic** — split documents into semantic chunks (~500 tokens), preserve metadata (page/section, original offset)
-- [ ] **OpenAI embeddings** — call the embedding API per chunk, store 1536-dim vectors in `document_chunks.embedding`
-- [ ] **Full-text search vectors** — generate `tsvector` for lexical search in `document_chunks.search_vector`
-- [ ] **Batch ingestion** — load all chunks and vectors into Supabase in one batch
-- [ ] **Spot-check** — verify chunk counts and a sample of embeddings against source text
+- [x] **Download SEC filings** — use `data/download.py` to fetch 10-Ks from EDGAR (Netflix, Tesla, Costco, JPMorgan, United Healthcare, 2021–2025)
+- [x] **Parse to Markdown** — convert HTML/XML filings to normalized Markdown, extract metadata (ticker, CIK, filing date, accession number)
+- [x] **Document persistence layer** — `app/database/documents.py` for storing source docs, chunks, embeddings
+- [x] **Store source documents** — persist normalized Markdown in `source_documents`
+- [x] **Chunking logic** — split documents into semantic chunks (~500 tokens), preserve metadata (page/section, original offset)
+- [x] **OpenAI embeddings** — call the embedding API per chunk, store 1536-dim vectors in `document_chunks.embedding`
+- [x] **Full-text search vectors** — generate `tsvector` for lexical search in `document_chunks.search_vector`
+- [x] **Batch ingestion** — load all chunks and vectors into Supabase in one batch
+- [x] **Spot-check** — 7,948 chunks ingested across 25 filings (5 companies × 5 years)
 
 ---
 
 ## Slice 2: Thread Management — fast follow
 
-**Goal:** Give analysts the "see your past conversations" capability the brief calls for, while the persistence code from Slice 1 is still fresh.
+**Goal:** Give analysts a ChatGPT/Claude-style conversation experience — persistent sidebar, multi-thread history, and a blank composer on home that creates a thread implicitly on first send.
 
-**Definition of done:** From the home page, see a list of past threads, start a new conversation, switch between threads — each with correctly isolated, persisted history. Opening another user's thread returns 403. Redeployed and confirmed live.
+**Definition of done:** Land on home, see a blank composer and past threads in a sidebar. Send a first message — URL changes to `/chat/:threadId`, thread appears in sidebar with a truncated title. Click a past thread — correct isolated history loads. Switch threads freely. A missing or non-existent thread returns 404. Redeployed and confirmed live.
 
-- [ ] **Chat creation endpoint** — `POST /threads` to create a new chat thread
-- [ ] **Thread list query** — extend `app/database/chats.py` to list a user's threads
-- [ ] **Thread list UI** — display past threads on the home page
-- [ ] **New conversation flow** — start a thread and navigate into it
-- [ ] **Thread switching** — move between threads with correct message history per thread
-- [ ] **Error handling** — 403 when a user requests a thread they don't own
-- [ ] **Redeploy** — confirm thread creation, listing, and switching work against the deployed app
+### Backend
+- [ ] **`list_threads`** — add to `app/database/chats.py`; select id, title, updated_at ordered by `updated_at DESC`
+- [ ] **`create_thread`** — add to `app/database/chats.py`; insert row, return new thread
+- [ ] **`set_thread_title`** — add to `app/database/chats.py`; update title to first 60 chars of first user message, trimmed at word boundary
+- [ ] **Remove `get_or_create_thread`** — no longer needed; delete from `app/database/chats.py`
+- [ ] **`GET /threads`** — returns `list[ThreadSummary]` (id, title, updated_at)
+- [ ] **`POST /threads`** — creates thread, returns `ThreadSummary`
+- [ ] **`GET /threads/{thread_id}`** — returns `ThreadDetail` (id, title, messages); replaces old `GET /thread`
+- [ ] **Delete `GET /thread`** — Slice 1 crutch; confirm no frontend calls remain
+- [ ] **Auto-title on first message** — in `POST /chat/stream`, after persisting the user message, if thread had no prior messages call `set_thread_title`
+- [ ] **Error handling** — 404 for missing or unauthorized thread (RLS collapses both cases; no 403 needed)
+
+### Frontend
+- [ ] **`AppShell` layout component** — sidebar (fixed left) + main content area; wraps all protected routes via layout route in `App.tsx`
+- [ ] **`Sidebar` component** — calls `GET /threads` on mount; renders thread list with title (fallback: "New conversation") and relative timestamp; highlights active thread; "New chat" button navigates to `/`
+- [ ] **`HomePage` rewrite** — blank composer (textarea + send); on submit: `POST /threads` → navigate to `/chat/:threadId` with `{ state: { pendingMessage } }`
+- [ ] **`ChatPage` update** — call `GET /threads/{thread_id}` instead of `GET /thread`; on mount check `location.state.pendingMessage`, auto-submit via `useChat`, clear state
+- [ ] **`lib/api.ts`** — add typed `getThreads()`, `createThread()`, `getThread(id)` methods
+- [ ] **Error handling** — 404 on ChatPage shows error state; sidebar load failure is silent (doesn't block chat)
+
+### Deploy
+- [ ] **Redeploy** — smoke test new user flow (blank composer → send → URL changes → sidebar updates), thread switching, and confirm old `/thread` endpoint is gone
 
 ---
 

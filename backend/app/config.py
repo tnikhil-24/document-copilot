@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     openai_embedding_model: str = "text-embedding-3-small"
     openai_embedding_dimensions: int = 1536
 
+    # --- Ingest ---
+    # Path to the manifest produced by data/download.py, relative to backend/
+    manifest_path: str = "../data/downloads/manifest.json"
+
     # --- Server ---
     # Comma-separated list of allowed browser origins for CORS
     allowed_origins: str = "http://localhost:5173"
