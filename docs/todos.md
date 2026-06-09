@@ -99,24 +99,24 @@ Each slice below states its goal, its definition of done as a demoable scenario,
 **Definition of done:** Land on home, see a blank composer and past threads in a sidebar. Send a first message — URL changes to `/chat/:threadId`, thread appears in sidebar with a truncated title. Click a past thread — correct isolated history loads. Switch threads freely. A missing or non-existent thread returns 404. Redeployed and confirmed live.
 
 ### Backend
-- [ ] **`list_threads`** — add to `app/database/chats.py`; select id, title, updated_at ordered by `updated_at DESC`
-- [ ] **`create_thread`** — add to `app/database/chats.py`; insert row, return new thread
-- [ ] **`set_thread_title`** — add to `app/database/chats.py`; update title to first 60 chars of first user message, trimmed at word boundary
-- [ ] **Remove `get_or_create_thread`** — no longer needed; delete from `app/database/chats.py`
-- [ ] **`GET /threads`** — returns `list[ThreadSummary]` (id, title, updated_at)
-- [ ] **`POST /threads`** — creates thread, returns `ThreadSummary`
-- [ ] **`GET /threads/{thread_id}`** — returns `ThreadDetail` (id, title, messages); replaces old `GET /thread`
-- [ ] **Delete `GET /thread`** — Slice 1 crutch; confirm no frontend calls remain
-- [ ] **Auto-title on first message** — in `POST /chat/stream`, after persisting the user message, if thread had no prior messages call `set_thread_title`
-- [ ] **Error handling** — 404 for missing or unauthorized thread (RLS collapses both cases; no 403 needed)
+- [x] **`list_threads`** — add to `app/database/chats.py`; select id, title, updated_at ordered by `updated_at DESC`
+- [x] **`create_thread`** — add to `app/database/chats.py`; insert row, return new thread
+- [x] **`set_thread_title`** — add to `app/database/chats.py`; update title to first 60 chars of first user message, trimmed at word boundary
+- [x] **Remove `get_or_create_thread`** — no longer needed; delete from `app/database/chats.py`
+- [x] **`GET /threads`** — returns `list[ThreadSummary]` (id, title, updated_at)
+- [x] **`POST /threads`** — creates thread, returns `ThreadSummary`
+- [x] **`GET /threads/{thread_id}`** — returns `ThreadDetail` (id, title, messages); replaces old `GET /thread`
+- [x] **Delete `GET /thread`** — Slice 1 crutch; confirm no frontend calls remain
+- [x] **Auto-title on first message** — in `POST /chat/stream`, after persisting the user message, if thread had no prior messages call `set_thread_title`
+- [x] **Error handling** — 404 for missing or unauthorized thread (RLS collapses both cases; no 403 needed)
 
 ### Frontend
-- [ ] **`AppShell` layout component** — sidebar (fixed left) + main content area; wraps all protected routes via layout route in `App.tsx`
-- [ ] **`Sidebar` component** — calls `GET /threads` on mount; renders thread list with title (fallback: "New conversation") and relative timestamp; highlights active thread; "New chat" button navigates to `/`
-- [ ] **`HomePage` rewrite** — blank composer (textarea + send); on submit: `POST /threads` → navigate to `/chat/:threadId` with `{ state: { pendingMessage } }`
-- [ ] **`ChatPage` update** — call `GET /threads/{thread_id}` instead of `GET /thread`; on mount check `location.state.pendingMessage`, auto-submit via `useChat`, clear state
-- [ ] **`lib/api.ts`** — add typed `getThreads()`, `createThread()`, `getThread(id)` methods
-- [ ] **Error handling** — 404 on ChatPage shows error state; sidebar load failure is silent (doesn't block chat)
+- [x] **`AppShell` layout component** — sidebar (fixed left) + main content area; wraps all protected routes via layout route in `App.tsx`
+- [x] **`Sidebar` component** — calls `GET /threads` on mount; renders thread list with title (fallback: "New conversation") and relative timestamp; highlights active thread; "New chat" button navigates to `/`
+- [x] **`HomePage` rewrite** — blank composer (textarea + send); on submit: `POST /threads` → navigate to `/chat/:threadId` with `{ state: { pendingMessage } }`
+- [x] **`ChatPage` update** — call `GET /threads/{thread_id}` instead of `GET /thread`; on mount check `location.state.pendingMessage`, auto-submit via `useChat`, clear state
+- [x] **`lib/api.ts`** — add typed `getThreads()`, `createThread()`, `getThread(id)` methods
+- [x] **Error handling** — 404 on ChatPage shows error state; sidebar load failure is silent (doesn't block chat)
 
 ### Deploy
 - [ ] **Redeploy** — smoke test new user flow (blank composer → send → URL changes → sidebar updates), thread switching, and confirm old `/thread` endpoint is gone

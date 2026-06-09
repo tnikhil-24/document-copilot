@@ -1,55 +1,79 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import { Chat } from '@/components/chat/Chat'
-import { Button } from '@/components/ui/button'
-import { api, ApiError, type ChatThread } from '@/lib/api'
-import { supabase } from '@/lib/supabase'
+import { api, ApiError, type ThreadDetail } from '@/lib/api'
 
 export function ChatPage() {
   const { threadId } = useParams<{ threadId: string }>()
-  const [thread, setThread] = useState<ChatThread | null>(null)
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [thread, setThread] = useState<ThreadDetail | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [notFound, setNotFound] = useState(false)
+
+  // Captured once at mount via initializer — survives the router-state-clearing
+  // re-render that happens before Chat mounts (while getThread is loading).
+  const [pendingMessage] = useState(
+    () => (location.state as { pendingMessage?: string } | null)?.pendingMessage
+  )
+
+  // Clear router state so a page refresh does not re-submit.
+  useEffect(() => {
+    if (pendingMessage) {
+      navigate(location.pathname, { replace: true, state: {} })
+    }
+  }, [pendingMessage, navigate, location.pathname])
 
   useEffect(() => {
+    if (!threadId) return
     let cancelled = false
 
     api
-      .get<ChatThread>('/thread')
+      .getThread(threadId)
       .then((loaded) => {
         if (!cancelled) setThread(loaded)
       })
       .catch((cause: unknown) => {
         if (cancelled) return
-        console.error('Failed to load thread history:', cause)
-        setError(cause instanceof ApiError ? cause.message : 'Something went wrong.')
+        console.error('Failed to load thread:', cause)
+        if (cause instanceof ApiError && cause.status === 404) {
+          setNotFound(true)
+        } else {
+          setError(cause instanceof ApiError ? cause.message : 'Something went wrong.')
+        }
       })
 
     return () => {
       cancelled = true
     }
-    // `GET /thread` always returns the analyst's single thread (Slice 1),
-    // so this only needs to run once per mount, not per `threadId`.
-  }, [])
+  }, [threadId])
+
+  if (notFound) {
+    return (
+      <div className="flex h-full items-center justify-center p-6">
+        <p className="text-sm text-muted-foreground">Conversation not found.</p>
+      </div>
+    )
+  }
 
   if (error) {
     return (
-      <div className="mx-auto flex min-h-svh max-w-xl flex-col items-center justify-center gap-4 p-6 text-center">
+      <div className="flex h-full items-center justify-center p-6">
         <p className="text-sm text-destructive">{error}</p>
-        <Button variant="outline" onClick={() => void supabase.auth.signOut()}>
-          Log out
-        </Button>
       </div>
     )
   }
 
   if (thread === null || threadId === undefined) {
     return (
-      <div className="flex min-h-svh items-center justify-center p-6">
-        <p className="text-sm text-muted-foreground">Loading your conversation…</p>
+      <div className="flex h-full items-center justify-center p-6">
+        <p className="text-sm text-muted-foreground">Loading conversation…</p>
       </div>
     )
   }
 
-  return <Chat threadId={threadId} initialMessages={thread.messages} />
+  return (
+    <Chat threadId={threadId} initialMessages={thread.messages} pendingMessage={pendingMessage} />
+  )
 }

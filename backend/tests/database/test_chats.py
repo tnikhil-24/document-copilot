@@ -3,7 +3,15 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from app.database.chats import append_message, fetch_messages, get_or_create_thread, get_thread
+from app.database.chats import (
+    _truncate_title,
+    append_message,
+    create_thread,
+    fetch_messages,
+    get_thread,
+    list_threads,
+    set_thread_title,
+)
 
 pytestmark = pytest.mark.anyio
 
@@ -14,32 +22,79 @@ def _client_with_table(table: MagicMock) -> MagicMock:
     return client
 
 
-class TestGetOrCreateThread:
-    async def test_returns_existing_thread_without_creating_one(self) -> None:
-        thread_row = {"id": "thread-1", "user_id": "user-1"}
+class TestListThreads:
+    async def test_returns_threads_ordered_by_updated_at_desc(self) -> None:
+        rows = [
+            {"id": "t2", "title": "B", "updated_at": "2026-06-09"},
+            {"id": "t1", "title": "A", "updated_at": "2026-06-08"},
+        ]
         table = MagicMock()
-        lookup = table.select.return_value.eq.return_value.order.return_value.limit.return_value.maybe_single
-        lookup.return_value.execute = AsyncMock(return_value=MagicMock(data=thread_row))
+        table.select.return_value.order.return_value.execute = AsyncMock(return_value=MagicMock(data=rows))
         client = _client_with_table(table)
 
-        result = await get_or_create_thread(client, user_id="user-1")
+        result = await list_threads(client)
 
-        assert result == thread_row
-        table.select.return_value.eq.assert_called_once_with("user_id", "user-1")
-        table.insert.assert_not_called()
+        assert result == rows
+        table.select.assert_called_once_with("id, title, updated_at")
+        table.select.return_value.order.assert_called_once_with("updated_at", desc=True)
 
-    async def test_creates_a_thread_on_first_visit(self) -> None:
-        thread_row = {"id": "thread-1", "user_id": "user-1"}
+
+class TestCreateThread:
+    async def test_inserts_and_returns_the_new_thread(self) -> None:
+        user_id = str(uuid.uuid4())
+        thread_row = {"id": "t1", "user_id": user_id, "title": None}
         table = MagicMock()
-        lookup = table.select.return_value.eq.return_value.order.return_value.limit.return_value.maybe_single
-        lookup.return_value.execute = AsyncMock(return_value=None)
         table.insert.return_value.execute = AsyncMock(return_value=MagicMock(data=[thread_row]))
         client = _client_with_table(table)
 
-        result = await get_or_create_thread(client, user_id="user-1")
+        result = await create_thread(client, user_id=user_id)
 
         assert result == thread_row
-        table.insert.assert_called_once_with({"user_id": "user-1"})
+        table.insert.assert_called_once_with({"user_id": user_id})
+
+
+class TestSetThreadTitle:
+    async def test_updates_title_from_text(self) -> None:
+        thread_id = uuid.uuid4()
+        table = MagicMock()
+        table.update.return_value.eq.return_value.execute = AsyncMock()
+        client = _client_with_table(table)
+
+        await set_thread_title(client, thread_id=thread_id, text="What did Netflix say about content costs?")
+
+        table.update.assert_called_once_with({"title": "What did Netflix say about content costs?"})
+        table.update.return_value.eq.assert_called_once_with("id", str(thread_id))
+
+    async def test_truncates_long_text_at_word_boundary(self) -> None:
+        thread_id = uuid.uuid4()
+        table = MagicMock()
+        table.update.return_value.eq.return_value.execute = AsyncMock()
+        client = _client_with_table(table)
+
+        await set_thread_title(client, thread_id=thread_id, text="word " * 20)
+
+        title = table.update.call_args[0][0]["title"]
+        assert len(title) <= 60
+
+
+class TestTruncateTitle:
+    def test_returns_short_text_unchanged(self) -> None:
+        assert _truncate_title("short") == "short"
+
+    def test_strips_whitespace(self) -> None:
+        assert _truncate_title("  hello  ") == "hello"
+
+    def test_truncates_at_word_boundary(self) -> None:
+        result = _truncate_title("word " * 15)
+        assert len(result) <= 60
+        assert not result.endswith(" ")
+
+    def test_hard_truncates_when_no_space_found(self) -> None:
+        assert _truncate_title("x" * 80) == "x" * 60
+
+    def test_exact_boundary_not_truncated(self) -> None:
+        text = "a" * 60
+        assert _truncate_title(text) == text
 
 
 class TestGetThread:
@@ -77,6 +132,7 @@ class TestAppendMessage:
         message_row = {"id": "msg-1", "role": "user", "content": {"text": "hello"}}
         table = MagicMock()
         table.insert.return_value.execute = AsyncMock(return_value=MagicMock(data=[message_row]))
+        table.update.return_value.eq.return_value.execute = AsyncMock()
         client = _client_with_table(table)
 
         result = await append_message(client, thread_id=thread_id, role="user", text="hello")
@@ -85,6 +141,19 @@ class TestAppendMessage:
         table.insert.assert_called_once_with(
             {"thread_id": str(thread_id), "role": "user", "content": {"text": "hello"}}
         )
+
+    async def test_touches_thread_updated_at(self) -> None:
+        thread_id = uuid.uuid4()
+        table = MagicMock()
+        table.insert.return_value.execute = AsyncMock(return_value=MagicMock(data=[{"id": "msg-1"}]))
+        table.update.return_value.eq.return_value.execute = AsyncMock()
+        client = _client_with_table(table)
+
+        await append_message(client, thread_id=thread_id, role="user", text="hello")
+
+        update_payload = table.update.call_args[0][0]
+        assert "updated_at" in update_payload
+        table.update.return_value.eq.assert_called_once_with("id", str(thread_id))
 
 
 class TestFetchMessages:

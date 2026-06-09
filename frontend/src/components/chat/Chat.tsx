@@ -12,13 +12,15 @@ import { supabase } from '@/lib/supabase'
 type ChatProps = {
   threadId: string
   initialMessages: UIMessage[]
+  pendingMessage?: string
 }
 
 /** Wires the AI SDK's `useChat` to `/chat/stream`, injecting the Supabase
  * access token per request so a refreshed token is always used. */
-export function Chat({ threadId, initialMessages }: ChatProps) {
+export function Chat({ threadId, initialMessages, pendingMessage }: ChatProps) {
   const [input, setInput] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
+  const hasSentPendingRef = useRef(false)
 
   // The transport only forwards whatever chat `id` it's given via
   // `prepareSendMessagesRequest` — it doesn't need to change with `threadId`.
@@ -50,6 +52,13 @@ export function Chat({ threadId, initialMessages }: ChatProps) {
   })
 
   const isBusy = status === 'submitted' || status === 'streaming'
+
+  // Auto-submit the pending message from the home page composer, once.
+  useEffect(() => {
+    if (!pendingMessage || hasSentPendingRef.current) return
+    hasSentPendingRef.current = true
+    void sendMessage({ text: pendingMessage })
+  }, [pendingMessage, sendMessage])
 
   useEffect(() => {
     if (error) console.error('Chat request failed:', error)
