@@ -16,10 +16,18 @@ Role = Literal["user", "assistant", "system"]
 
 class UIMessagePart(BaseModel):
     """One part of an AI SDK UI message. Only `text` parts are produced or
-    consumed today — richer part types arrive with the real agent."""
+    consumed today — richer part types arrive with the real agent.
 
-    type: Literal["text"]
-    text: str
+    `type` is a plain str (not Literal["text"]) because the AI SDK injects
+    `step-start` parts into assistant messages when steps are used. Those
+    arrive on subsequent requests and would fail validation otherwise.
+    `text` defaults to "" so non-text parts without that field parse cleanly.
+    """
+
+    model_config = {"extra": "allow"}
+
+    type: str
+    text: str = ""
 
 
 class UIMessage(BaseModel):
