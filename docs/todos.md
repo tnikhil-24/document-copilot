@@ -130,13 +130,13 @@ Each slice below states its goal, its definition of done as a demoable scenario,
 **Definition of done:** Ask one of the brief's simpler single-fact questions (e.g., "What did Netflix's 2023 10-K say about content costs?") and get a real, validated, cited answer; click a citation and see the actual source passage with company/ticker/filing date/page. Ask something outside the corpus and get an honest refusal, never a guess. If the LLM or grounding step fails, the user sees a 502 and no half-message is persisted.
 
 ### Schema & config
-- [ ] **Migration: `match_document_chunks` RPC** — Postgres function for cosine-distance kNN over `document_chunks.embedding` with optional `ticker`/`year` filters on `chunk_metadata`
+- [x] **Migration: `match_document_chunks` RPC** — Postgres function for cosine-distance kNN over `document_chunks.embedding` with optional `ticker`/`year` filters on `chunk_metadata`
 - [ ] **Migration: `message_citations.marker`** — add a `marker: int` column to preserve `[1]`/`[2]` ordering across reloads
 - [ ] **Config** — add `openai_chat_model = "gpt-4o-mini"` to `app/config.py`
 
 ### Retrieval (naive — semantic, with metadata filters)
-- [ ] **Embed user query** — call the OpenAI embedding API on the user's question
-- [ ] **`app/retrieval/retriever.py`** — calls `match_document_chunks` via the Supabase client; returns full chunk content + metadata; `top_k=8`; optional `ticker`/`year` filters
+- [x] **Embed user query** — call the OpenAI embedding API on the user's question
+- [x] **`app/retrieval/retriever.py`** — calls `match_document_chunks` via the Supabase client; returns full chunk content + metadata; `top_k=8`; optional `ticker`/`year` filters
 
 ### Agent (PydanticAI)
 - [ ] **Agent module** — `app/assistant/agent.py`: `gpt-4o-mini`, `request_limit=5` per turn
