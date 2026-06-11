@@ -148,7 +148,7 @@ Each slice below states its goal, its definition of done as a demoable scenario,
 - [ ] **Tool constraints** — the agent can only cite chunks recorded in the deps registry for this run
 
 ### Grounding & citation validation
-- [ ] **Grounding module** — `app/grounding/validator.py`: pure `validate_citations(answer, retrieved_chunk_ids)` checks marker↔citation 1:1 consistency, every `chunk_id` is in the retrieved set, and `has_sufficient_evidence` is consistent with `citations` (non-empty+valid iff `True`)
+- [x] **Grounding module** — `app/grounding/validator.py`: pure `validate_citations(answer, retrieved_chunk_ids)` checks marker↔citation 1:1 consistency, every `chunk_id` is in the retrieved set, and `has_sufficient_evidence` is consistent with `citations` (non-empty+valid iff `True`)
 - [ ] **Self-correction** — wire `validate_citations` as `@agent.output_validator`; on failure raise `ModelRetry` describing the valid markers/chunk IDs, consuming part of the `request_limit` budget
 - [ ] **Hard gate** — orchestrator re-runs `validate_citations` after the agent finishes; on failure raise `HTTPException(502)` and persist nothing
 - [ ] **Source passage hydration** — build `SourcePassage` objects from the retrieved `document_chunks` rows (content + ticker/company/filing type/date/section), never from model output
